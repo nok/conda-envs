@@ -5,8 +5,10 @@
 # <bitbar.version>v1.0</bitbar.version>
 # <bitbar.author>Darius Morawiec</bitbar.author>
 # <bitbar.author.github>nok</bitbar.author.github>
-# <bitbar.desc>BitBar plugin to list all created conda environments and to open a new session with a chosen environment.</bitbar.desc>
+# <bitbar.desc>Useful BitBar plugin to list all created conda environments and to open a new session with a chosen environment.</bitbar.desc>
+# <bitbar.image>https://github.com/nok/conda-envs/blob/master/themes/dark.png?raw=true</bitbar.image>
 # <bitbar.dependencies>conda</bitbar.dependencies>
+# <bitbar.abouturl>https://github.com/nok/conda-envs</bitbar.abouturl>
 
 
 import os
