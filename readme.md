@@ -4,9 +4,11 @@
 
 [BitBar](https://getbitbar.com/) plugin to list all created [conda](https://www.continuum.io/downloads) environments and to open a new session with a chosen environment.
 
+<!--
 ## Screenshot
 
 ![conda-envs](themes/dark.png)
+-->
 
 ## License
 
