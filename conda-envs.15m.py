@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 # <bitbar.title>Anaconda Environments</bitbar.title>
+# <bitbar.version>v1.0</bitbar.version>
 # <bitbar.author>Darius Morawiec</bitbar.author>
 # <bitbar.author.github>nok</bitbar.author.github>
-# <bitbar.desc>Open a Terminal with a specific conda environment.</bitbar.desc>
+# <bitbar.desc>BitBar plugin to list all created conda environments and to open a new session with a chosen environment.</bitbar.desc>
+# <bitbar.dependencies>conda</bitbar.dependencies>
 
 
 import os
@@ -12,12 +14,12 @@ import subprocess
 
 
 CONDA_PATH = '~/anaconda/bin/conda'
+CHECK_VERSION = True
 
 
 class Color:
     GREEN = '#3bb15c'
     BLUE = '#4a90f3'
-    WHITE = '#ffffff'
 
 
 class Env:
@@ -27,11 +29,12 @@ class Env:
         deps = subprocess.check_output(cmd, stderr=subprocess.STDOUT).strip()
 
         version = None
-        for dep in deps.splitlines():
-            if '- python=' in dep:
-                version = dep.split('=')[1]
-                env_name += ' (%s)' % version
-                break
+        if CHECK_VERSION:
+            for dep in deps.splitlines():
+                if '- python=' in dep:
+                    version = dep.split('=')[1]
+                    env_name += ' (%s)' % version
+                    break
 
         self.env_name = env_name
         self.version = version
@@ -42,43 +45,65 @@ class Env:
             return Color.WHITE
         else:
             major = self.version.split('.')[0]
-            if major is '2':
+            if major.startswith('2'):
                 return Color.GREEN
         return Color.BLUE
 
     def __str__(self):
+        if self.version is None:
+            return ('%s | bash=source param1=activate '
+                    'param2=%s terminal=true refresh=false') % (
+                   self.env_name, self.env_name)
         return ('%s | color=%s bash=source param1=activate '
                 'param2=%s terminal=true refresh=false') % (
                self.env_name, self.color, self.env_name)
 
 
-def main():
+def is_conda_installed():
     conda = os.path.expanduser(CONDA_PATH)
+    try:
+        subprocess.check_output([conda], stderr=subprocess.STDOUT).strip()
+    except Exception as e:
+        print('---')
+        print('Download Aanaconda | href=https://www.continuum.io/downloads')
+        exit(-1)
 
+
+def get_conda_envs():
+    conda = os.path.expanduser(CONDA_PATH)
     cmd = [conda, 'env', 'list']
-    envs = subprocess.check_output(cmd, stderr=subprocess.STDOUT).strip()
-
-    menu = []
-    for env in envs.splitlines():
+    out = subprocess.check_output(cmd, stderr=subprocess.STDOUT).strip()
+    envs = []
+    for env in out.splitlines():
         if not env.strip().startswith('#'):
             tuple = env.split()
             name, path = tuple[0], tuple[1]
-            if any(['*', 'root']) not in tuple:
-                menu.append(Env(name))
+            # if any(['*', 'root']) not in tuple:
+            envs.append(Env(name))
+    return envs
 
-    print('𝗔')
-    if len(menu) > 0:
+
+def print_menu(envs):
+    if len(envs) > 0:
         print('---')
-        for env in menu:
+        for idx, env in enumerate(envs):
             print(env)
-        print('---')
-        print('Python 2 | color=%s' % Color.GREEN)
-        print('Python 3 | color=%s' % Color.BLUE)
-        print('---')
-
+        if CHECK_VERSION:
+            print('---')
+            print('Python 2 | color=%s' % Color.GREEN)
+            print('Python 3 | color=%s' % Color.BLUE)
+    print('---')
+    conda = os.path.expanduser(CONDA_PATH)
     cmd = [conda, '--version']
     ver = subprocess.check_output(cmd, stderr=subprocess.STDOUT).strip()
     print(ver)
+
+
+def main():
+    print('𝗔')
+    is_conda_installed()
+    envs = get_conda_envs()
+    print_menu(envs)
 
 
 if __name__ == "__main__":
