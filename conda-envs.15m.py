@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # <bitbar.title>Anaconda Environments</bitbar.title>
-# <bitbar.version>v1.1</bitbar.version>
+# <bitbar.version>v1.2</bitbar.version>
 # <bitbar.author>Darius Morawiec</bitbar.author>
 # <bitbar.author.github>nok</bitbar.author.github>
 # <bitbar.desc>Useful BitBar plugin to list all created conda environments and to open a new session with a chosen environment.</bitbar.desc>
@@ -12,12 +12,13 @@
 
 
 import os
-import subprocess
+import subprocess as subp
 
 
 # User settings:
 CONDA_PATH = '~/anaconda/bin/conda'
 CHECK_VERSION = True
+CHECK_SIZE = True
 
 # BitBar related constants:
 LINE = '---'  # cutting line
@@ -29,10 +30,17 @@ class Color:
 
 
 class Env:
-    def __init__(self, name):
+    def __init__(self, name, path):
         conda = os.path.expanduser(CONDA_PATH)
         cmd = [conda, 'env', 'export', '-n', name]
-        deps = subprocess.check_output(cmd, stderr=subprocess.STDOUT).strip()
+        deps = subp.check_output(cmd, stderr=subp.STDOUT).strip()
+
+        self.name = name
+
+        if CHECK_SIZE:
+            du = ['du', '-hs', path]
+            size = subp.check_output(du, stderr=subp.STDOUT).strip().split()[0]
+            name += ' (%s)' % size
 
         version = None
         if CHECK_VERSION:
@@ -42,7 +50,7 @@ class Env:
                     name += ' (%s)' % version
                     break
 
-        self.name = name
+        self.meta = name
         self.version = version
 
     @property
@@ -63,7 +71,7 @@ class Env:
 
         :return: string: The environment settings in BitBar format.
         """
-        cmd = '{name} | bash=source param1=activate param2={name} ' + \
+        cmd = '{meta} | bash=source param1=activate param2={name} ' + \
               'terminal=true refresh=false'
         meta = self.__dict__
         if self.version is not None:
@@ -80,7 +88,7 @@ def is_conda_installed():
     """
     conda = os.path.expanduser(CONDA_PATH)
     try:
-        subprocess.check_output([conda], stderr=subprocess.STDOUT).strip()
+        subp.check_output([conda], stderr=subp.STDOUT).strip()
     except:
         print(LINE)
         print('Download Aanaconda | href=https://www.continuum.io/downloads')
@@ -95,14 +103,15 @@ def get_conda_envs():
     """
     conda = os.path.expanduser(CONDA_PATH)
     cmd = [conda, 'env', 'list']
-    out = subprocess.check_output(cmd, stderr=subprocess.STDOUT).strip()
+    out = subp.check_output(cmd, stderr=subp.STDOUT).strip()
     envs = []
     for env in out.splitlines():
         if not env.strip().startswith('#'):
             tuple = env.split()
             name = tuple[0]
+            path = tuple[1]
             try:
-                env = Env(name)
+                env = Env(name, path)
                 envs.append(env)
             except:
                 pass
@@ -126,7 +135,7 @@ def print_menu(envs):
     print(LINE)
     conda = os.path.expanduser(CONDA_PATH)
     cmd = [conda, '--version']
-    ver = subprocess.check_output(cmd, stderr=subprocess.STDOUT).strip()
+    ver = subp.check_output(cmd, stderr=subp.STDOUT).strip()
     print(ver)
 
 
